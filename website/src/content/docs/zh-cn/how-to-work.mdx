@@ -1,0 +1,103 @@
+---
+title: 工作方式
+description: 本地运行 Herdr、在 SSH 中使用，或通过远程接入使用。
+---
+
+让 Herdr 运行在工作所在的地方。从你所在的任何地方接入。
+
+Herdr 由一个后台会话服务端加一个或多个终端客户端组成。面板在服务端中持续运行。客户端进行接入、分离和渲染会话。
+
+## 本地工作
+
+从项目目录启动 Herdr：
+
+```bash
+herdr
+```
+
+Herdr 会自动启动或接入你的本地后台会话。你不需要管理 socket。在面板中正常运行 shell、服务端、测试和 Agent。
+
+使用 `ctrl+b q` 分离客户端。你的面板会继续运行。
+
+稍后重新接入：
+
+```bash
+herdr
+```
+
+如果你希望结束会话并停止其面板，停止服务端：
+
+```bash
+herdr server stop
+```
+
+## 通过普通 SSH 远程工作
+
+SSH 到拥有代码和凭据的机器，然后在那里运行 Herdr：
+
+```bash
+ssh you@server
+herdr
+```
+
+这像一个终端多路复用器一样工作。你的 shell 是远程的。Herdr 服务端是远程的。Agent 和面板在远程机器上运行。使用 `ctrl+b q` 分离，断开连接，然后再次 SSH 回来并运行 `herdr` 即可。
+
+当你已经常驻在 SSH shell 中、在手机或平板的 SSH 客户端上、或者想要最简单的配置时，使用这种方式。
+
+## 从手机工作
+
+你不需要 Herdr 移动应用或 Web 仪表盘。在手机上安装任意 SSH 客户端，连接到运行 Agent 的机器，然后在那里启动 Herdr：
+
+```bash
+ssh you@server
+herdr
+```
+
+同一个持久的 Herdr 会话会在你的手机终端中打开。TUI 会适配窄屏幕，因此你可以在不离开 SSH 的情况下检查 Agent、切换工作区和查看面板。
+
+在 iPhone 上，像 [moshi](https://getmoshi.app/) 这样的应用表现良好。
+
+<div class="mobile-doc-shots">
+  <figure>
+    <img src="/assets/mobile-agent-session-v2.jpeg" alt="手机上的 Herdr Agent 会话通过 SSH" loading="lazy" />
+    <figcaption>通过 SSH 的 Agent 会话</figcaption>
+  </figure>
+  <figure>
+    <img src="/assets/mobile-switch-menu-v2.jpeg" alt="手机上 Herdr 的响应式切换菜单" loading="lazy" />
+    <figcaption>响应式切换菜单</figcaption>
+  </figure>
+</div>
+
+## 从本地终端远程工作
+
+通过 SSH 接入，无需先打开 shell：
+
+```bash
+herdr --remote workbox
+herdr --remote ssh://you@server:2222
+```
+
+你的本地 Herdr 作为瘦客户端运行。它通过 SSH 连接，启动或接入远程 Herdr 服务端，并将 UI 流式传输回你的本地终端。
+
+当你希望远程会话感觉像本地一样时使用这种方式。客户端在你的机器上运行，因此本地桌面功能（如图片剪贴板粘贴）可以桥接到远程服务端。如果你先 SSH 然后在服务端运行 `herdr`，Herdr 完全在服务端运行，无法读取你的本地桌面剪贴板。
+
+对于重复连接的目标，在 SSH 配置中添加主机：
+
+```text
+Host workbox
+  HostName server.example.com
+  User you
+  Port 2222
+```
+
+然后使用以下命令接入：
+
+```bash
+herdr --remote workbox
+```
+
+## 选择哪种方式
+
+本地工作使用 `herdr`。当你希望 Herdr 在远程 shell 上表现得像 tmux，或者使用手机 SSH 客户端时，使用 `ssh you@server` 然后 `herdr`。当你希望为远程会话使用本地瘦客户端（包括本地剪贴板图片粘贴桥接）时，使用 `herdr --remote <host>`。
+
+关于远程启动细节、命名远程会话、自定义二进制文件、直接终端接入和 `--no-session`，请参阅[持久化与远程访问](/zh-cn/docs/persistence-remote/)。

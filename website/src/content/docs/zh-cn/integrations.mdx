@@ -1,0 +1,192 @@
+---
+title: 集成
+description: 为 Pi、OMP、Claude Code、Codex、OpenCode、Hermes Agent 和 Qoder CLI 安装 Herdr 集成。
+---
+
+Herdr 自动检测支持的 Agent。集成通过直接向 Herdr 上报语义状态，使检测更加精确。
+
+当你希望从 Agent hook 或插件获得可靠的 `working`、`blocked`、`idle` 和 `done` 状态时，使用集成。
+
+## 安装集成
+
+在 Herdr 内部打开设置，使用集成标签页为 PATH 中找到的 Agent 安装推荐的集成，或手动运行命令：
+
+```bash
+herdr integration install pi
+herdr integration install omp
+herdr integration install claude
+herdr integration install codex
+herdr integration install opencode
+herdr integration install hermes
+herdr integration install qodercli
+```
+
+## 卸载集成
+
+```bash
+herdr integration uninstall pi
+herdr integration uninstall omp
+herdr integration uninstall claude
+herdr integration uninstall codex
+herdr integration uninstall opencode
+herdr integration uninstall hermes
+herdr integration uninstall qodercli
+```
+
+## Herdr 如何使用集成
+
+Herdr 组合三个信号来源：
+
+| 信号 | 目的 |
+| --- | --- |
+| 进程检测 | 识别哪个面板拥有哪个运行中的进程。 |
+| Agent 集成事件 | 上报语义状态，如 `working` 或 `blocked`。 |
+| 屏幕启发式 | 在 hook 不可用或不完整时填补空白。 |
+
+集成丰富了状态上报。它们不会取代进程检测。
+
+某些集成还会上报原生 Agent 会话引用。如果启用了 `[session] resume_agents_on_restore = true`，Herdr 会在服务端重启后使用官方会话引用来恢复 Claude Code、Codex、Pi、Hermes Agent 和 OpenCode 面板。
+
+原生会话恢复需要当前版本的 Herdr 集成：Pi 集成版本 `2`、Claude Code 版本 `4`、Codex 版本 `4`、OpenCode 版本 `2` 或 Hermes Agent 版本 `2`。OMP 集成版本 `2` 仅上报 Agent 状态。使用 `herdr integration status` 检查已安装版本。
+
+## Pi
+
+安装 Pi 集成：
+
+```bash
+herdr integration install pi
+```
+
+Herdr 将打包的扩展写入：
+
+```text
+~/.pi/agent/extensions/herdr-agent-state.ts
+```
+
+如果设置了 `PI_CODING_AGENT_DIR`，Herdr 会改为写入 `$PI_CODING_AGENT_DIR/extensions/herdr-agent-state.ts`。扩展目录必须已存在。卸载仅删除该扩展文件。
+
+## OMP
+
+安装 OMP 集成：
+
+```bash
+herdr integration install omp
+```
+
+Herdr 将打包的扩展写入：
+
+```text
+~/.omp/agent/extensions/herdr-omp-agent-state.ts
+```
+
+如果设置了 `PI_CODING_AGENT_DIR`，Herdr 会改为写入 `$PI_CODING_AGENT_DIR/extensions/herdr-omp-agent-state.ts`。扩展目录必须已存在。卸载仅删除该扩展文件。
+
+OMP 集成通过 Herdr 的 Socket API 上报 `omp` 作为 Agent 标签。它不需要对 `omp` 可执行文件的原生进程检测。
+
+## Claude Code
+
+安装 Claude Code hook：
+
+```bash
+herdr integration install claude
+```
+
+当 Claude Code 暴露 hook 事件时，该 hook 将 Agent 状态上报到本地 Herdr socket。
+
+Herdr 默认使用 `~/.claude`，或 `CLAUDE_CONFIG_DIR`（当设置时）。Claude 配置目录必须已存在。安装会写入 `hooks/herdr-agent-state.sh` 并用 Herdr hook 条目更新 `settings.json`。卸载会移除匹配的 hook 条目并删除 hook 脚本。
+
+## Codex
+
+安装 Codex hook：
+
+```bash
+herdr integration install codex
+```
+
+Codex 状态通过与其他集成相同的本地 Socket API 上报。
+
+Herdr 默认使用 `~/.codex`，或 `CODEX_HOME`（当设置时）。Codex 配置目录必须已存在。安装会写入 `herdr-agent-state.sh`，更新 `hooks.json`，并确保 `config.toml` 中 `[features] hooks = true`。它还会移除已废弃的顶层 `codex_hooks` 标志（如果存在）。卸载会从 `hooks.json` 中移除 Herdr 条目并删除 hook 脚本，但保留 `config.toml` 不变。
+
+## OpenCode
+
+安装 OpenCode 插件：
+
+```bash
+herdr integration install opencode
+```
+
+Herdr 将插件写入 `~/.config/opencode/plugins/herdr-agent-state.js`。OpenCode 配置目录必须已存在。卸载仅删除该插件文件。
+
+当 OpenCode 在 Herdr 面板内运行时，插件会上报语义状态。在 OpenCode 发出携带会话信息的事件后，Herdr 可以使用上报的会话 ID 通过 `opencode --session <id>` 恢复面板。
+
+## Hermes Agent
+
+安装 Hermes Agent 插件：
+
+```bash
+herdr integration install hermes
+```
+
+Herdr 写入 `~/.hermes/plugins/herdr-agent-state/` 并在 `~/.hermes/config.yaml` 中启用 `herdr-agent-state`。Hermes 配置目录必须已存在。安装后重启 Hermes 以加载插件。卸载会移除插件目录并从 `plugins.enabled` 中移除 `herdr-agent-state`。
+
+当 Hermes 在 Herdr 面板内运行时，插件会上报生命周期、工具、审批状态和会话 ID。Herdr 可以使用上报的会话 ID 通过 `hermes --resume <id>` 恢复面板。未安装插件时，原生屏幕启发式仍然可用。
+
+## Qoder CLI
+
+安装 Qoder CLI hook：
+
+```bash
+herdr integration install qodercli
+```
+
+当 Qoder CLI 发出生命周期事件时，该 hook 向 Herdr 上报语义状态。
+
+Herdr 默认使用 `~/.qoder`，或 `QODER_CONFIG_DIR`（当设置时）。Qoder 配置目录必须已存在。安装会写入 `hooks/herdr-agent-state.sh` 并用 Herdr hook 条目更新 `settings.json`。卸载会移除匹配的 hook 条目并删除 hook 脚本。
+
+未安装 hook 时，原生屏幕启发式仍然可用。
+
+## 自定义状态标签
+
+集成可以上报简短的可视标签而不改变语义状态。
+
+例如，一个 Agent 可以在语义上保持 `working`，同时在 UI 中显示 `indexing`。
+
+```bash
+herdr pane report-agent 1-1 \
+  --source custom:docs \
+  --agent docs-bot \
+  --state working \
+  --custom-status indexing
+```
+
+在 Herdr 管理的集成旁运行的用户 hook 应使用 metadata 而不是 `report-agent`。Metadata 改变展示而不接管集成的 `idle`、`working`、`blocked` 或会话恢复权限。`--agent` 守卫该上报，使其仅在权威 Agent 活跃时生效。`--applies-to-source` 守卫该上报，使其仅在生命周期权威来源活跃时生效。`--display-agent` 改变可见名称。
+
+```bash
+herdr pane report-metadata "$HERDR_PANE_ID" \
+  --source user:claude-title \
+  --agent claude \
+  --applies-to-source herdr:claude \
+  --title "重构认证中间件" \
+  --display-agent "Claude: auth" \
+  --custom-status "重构认证" \
+  --state-label working="正在重构认证" \
+  --ttl-ms 3600000
+```
+
+自定义状态和状态标签仅用于视觉展示。等待、通知和工作区汇总仍使用语义状态。
+
+## 调试集成状态
+
+列出已知 Agent：
+
+```bash
+herdr agent list
+```
+
+当你需要验证 Herdr 能看到什么时，读取一个面板：
+
+```bash
+herdr pane read 1-1 --source recent --lines 50
+```
+
+如果集成状态看起来有问题，首先确认 Agent 在 Herdr 内部运行，并且相关的 hook 或插件已为同一用户账户安装。

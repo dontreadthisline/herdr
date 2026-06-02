@@ -1,0 +1,109 @@
+---
+title: 安装 Herdr
+description: 在 Linux 和 macOS 上安装、更新和验证 Herdr。
+---
+
+Herdr 以单一二进制文件的形式分发，支持 Linux 和 macOS。
+
+## 安装
+
+运行安装脚本：
+
+```bash
+curl -fsSL https://herdr.dev/install.sh | sh
+```
+
+安装脚本会下载与你平台匹配的发行版二进制文件，并将其放入 PATH 中。
+
+## 通过 Homebrew 安装
+
+如果你已经在使用 Homebrew：
+
+```bash
+brew install herdr
+```
+
+## 验证
+
+启动 Herdr：
+
+```bash
+herdr
+```
+
+如果你的 shell 找不到 `herdr`，请重启终端或检查安装目录是否在 PATH 中。
+
+## 更新
+
+Herdr 会自动检查新版本并在应用内通知你。你也可以手动更新：
+
+```bash
+herdr update
+```
+
+`herdr update` 仅适用于由 Herdr 自己的安装程序管理的安装。Homebrew 和 Nix 安装应通过各自的包管理器进行更新。
+
+默认情况下，`herdr update` 安装新的二进制文件，并保持兼容的运行中会话不受影响。如果更新改变了 Herdr 的客户端/服务端协议，Herdr 会在安装后询问是否停止旧服务端。停止旧服务端以使用新版本。停止操作会退出面板进程。对于默认会话，运行 `herdr server stop`，然后再次运行 `herdr`。对于命名会话，运行 `herdr session stop <name>`，然后运行 `herdr session attach <name>`。
+
+要对支持的运行中会话启用实验性的实时服务端交接，运行：
+
+```bash
+herdr update --handoff
+```
+
+实时交接不适用于 Homebrew 或 Nix 包管理器更新。对于这些安装方式，请使用包管理器更新，然后在准备使用新服务端时重启该 Herdr 会话。如果运行中的会话仍在使用旧服务端，使用 `herdr server stop` 或 `herdr session stop <name>` 停止它，然后再次运行 Herdr。
+
+## 通过 Nix 安装
+
+如果你已经在使用 Nix，Herdr 提供了从源码构建的 flake：
+
+```bash
+nix run github:ogulcancelik/herdr/v0.x.y
+nix build github:ogulcancelik/herdr/v0.x.y
+nix profile install github:ogulcancelik/herdr/v0.x.y
+```
+
+将 `v0.x.y` 替换为最新的发行版标签。你可以省略标签以跟踪 `master` 分支，但对于常规安装，建议使用发行版标签。
+
+该 flake 也暴露了一个开发环境：
+
+```bash
+nix develop github:ogulcancelik/herdr
+```
+
+通过你安装 Herdr 时使用的相同 Nix 工作流进行更新。对于 profile 安装，列出你的 profile 条目并升级 Herdr 条目：
+
+```bash
+nix profile list
+nix profile upgrade <index-or-name>
+```
+
+如果 Herdr 是你自己的 flake 中的输入项，更新该输入项并重新构建你的系统、Home Manager 或开发环境：
+
+```bash
+nix flake update herdr
+```
+
+## 手动下载
+
+你也可以从 [GitHub 发行版页面](https://github.com/ogulcancelik/herdr/releases) 下载二进制文件。
+
+选择与你系统匹配的资产：
+
+| 系统 | 资产 |
+| --- | --- |
+| Linux x86_64 | `herdr-linux-x86_64` |
+| Linux aarch64 | `herdr-linux-aarch64` |
+| macOS Intel | `herdr-macos-x86_64` |
+| macOS Apple silicon | `herdr-macos-aarch64` |
+
+使其可执行并移动到 PATH 中的某个位置。
+
+```bash
+chmod +x herdr-linux-x86_64
+mv herdr-linux-x86_64 ~/.local/bin/herdr
+```
+
+## 系统要求
+
+Herdr 支持 Linux 和 macOS。尚不支持原生 Windows；目前请在 WSL 中使用 Herdr。

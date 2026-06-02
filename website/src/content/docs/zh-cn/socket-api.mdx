@@ -1,0 +1,292 @@
+---
+title: Socket API
+description: 从脚本、工具和编码 Agent 中控制运行中的 Herdr 服务端。
+---
+
+Herdr 暴露了一个本地 Socket API，供需要检查或控制运行中会话的脚本和 Agent 使用。
+
+大多数自动化应从 CLI 封装开始。仅当你需要直接的请求/响应控制或长期的事件订阅时，再使用原始 Socket API。
+
+## 选择集成层
+
+| 层 | 用途 |
+| --- | --- |
+| Agent 技能 | 教编码 Agent 如何在面板内使用 Herdr。 |
+| CLI 封装 | Shell 脚本、简单的编排和人工调试。 |
+| 原始 Socket API | 自定义工具、协议客户端和事件订阅者。 |
+
+这些层共享相同的控制面。
+
+## 你可以控制什么
+
+Socket API 可以：
+
+- 创建、列出、聚焦、重命名和关闭工作区
+- 创建、列出、聚焦、重命名和关闭标签页
+- 列出、检查、分割、重命名、读取、关闭面板，以及向其发送输入
+- 通过 CLI 助手列出、检查、读取、发送、重命名、聚焦、启动和接入 Agent
+- 从 hook 和插件上报自定义 Agent 状态
+- 订阅事件并等待输出或状态变化
+- 安装和卸载内置集成
+- 停止服务端并重载配置
+
+## CLI 示例
+
+创建工作区：
+
+```bash
+herdr workspace create --cwd ~/project --label api
+```
+
+创建标签页：
+
+```bash
+herdr tab create --label logs
+```
+
+分割面板并运行命令：
+
+```bash
+herdr pane split 1-1 --direction right
+herdr pane run 1-2 "npm test"
+```
+
+等待一个 Agent：
+
+```bash
+herdr wait agent-status 1-1 --status done
+```
+
+读取面板输出：
+
+```bash
+herdr pane read 1-2 --source recent --lines 50
+```
+
+## 原始方法
+
+原始 Socket 方法名使用点号记法：
+
+| 领域 | 方法 |
+| --- | --- |
+| 服务端 | `ping`、`server.stop`、`server.reload_config` |
+| 工作区 | `workspace.create`、`workspace.list`、`workspace.get`、`workspace.focus`、`workspace.rename`、`workspace.close` |
+| 工作树 | `worktree.list`、`worktree.create`、`worktree.open`、`worktree.remove` |
+| 标签页 | `tab.create`、`tab.list`、`tab.get`、`tab.focus`、`tab.rename`、`tab.close` |
+| 面板 | `pane.split`、`pane.list`、`pane.get`、`pane.rename`、`pane.send_text`、`pane.send_keys`、`pane.send_input`、`pane.read`、`pane.report_agent`、`pane.report_metadata`、`pane.clear_agent_authority`、`pane.release_agent`、`pane.close`、`pane.wait_for_output` |
+| Agent | `agent.list`、`agent.get`、`agent.read`、`agent.send`、`agent.rename`、`agent.focus`、`agent.start` |
+| 事件 | `events.subscribe`、`events.wait` |
+| 集成 | `integration.install`、`integration.uninstall` |
+
+某些 CLI 命令是对这些方法的封装。例如，`herdr agent wait` 解析 Agent 目标，然后订阅面板 Agent 状态事件。
+
+工作树方法将 Git 检出作为 Herdr 工作区来管理。`worktree.create` 创建检出并返回新的 `workspace`、`tab`、`root_pane` 和 `worktree` 记录。`worktree.open` 打开现有的检出或返回已打开的工作区。`worktree.remove` 对链接的子工作区运行 `git worktree remove`，永远不删除分支。
+
+从源工作区创建工作树：
+
+```json
+{"id":"req_1","method":"worktree.create","params":{"workspace_id":"1","branch":"worktree/api","focus":false}}
+```
+
+打开现有检出：
+
+```json
+{"id":"req_2","method":"worktree.open","params":{"workspace_id":"1","branch":"worktree/api","focus":true}}
+```
+
+移除链接的检出：
+
+```json
+{"id":"req_3","method":"worktree.remove","params":{"workspace_id":"2","force":false}}
+```
+
+对 `worktree.list`、`worktree.create` 和 `worktree.open` 最多使用 `workspace_id` 或 `cwd` 其中之一；省略两者以使用活跃工作区。对 `worktree.open` 必须使用 `path` 或 `branch` 其中之一。原始 Socket 的 `cwd` 和 `path` 值必须是绝对路径；CLI 在发送请求前展开相对 `--cwd` 和 `--path` 值。当工作区属于 Herdr 工作树组时，工作区响应包含可选的 `worktree` 来源信息。当现有工作区获得或更改工作树来源时，工作树命令可以发出 `workspace.updated`。
+
+## Socket 传输
+
+Herdr 通过 Unix 域 Socket 使用换行分隔的 JSON。
+
+每行发送一个请求：
+
+```json
+{"id":"req_1","method":"ping","params":{}}
+```
+
+成功的响应包含相同的 `id`：
+
+```json
+{"id":"req_1","result":{"type":"pong"}}
+```
+
+事件订阅在初始响应后保持连接打开。
+
+## Socket 路径
+
+默认 Socket 位于 Herdr 配置目录下。
+
+命名会话有单独的 Socket：
+
+```text
+~/.config/herdr/herdr.sock
+~/.config/herdr/sessions/<name>/herdr.sock
+```
+
+解析顺序：
+
+1. 显式 CLI `--session <name>`
+2. `HERDR_SOCKET_PATH`
+3. `HERDR_SESSION=<name>`
+4. 默认会话 Socket
+
+仅对底层覆盖使用 `HERDR_SOCKET_PATH`。
+
+## Agent 状态上报
+
+集成使用 `pane.report_agent` 上报 Agent 状态。
+
+```json
+{
+  "id": "req_1",
+  "method": "pane.report_agent",
+  "params": {
+    "pane_id": "1-1",
+    "source": "custom:docs",
+    "agent": "docs-bot",
+    "state": "working",
+    "message": "building docs",
+    "custom_status": "indexing"
+  }
+}
+```
+
+`state` 是语义性的。它影响等待、通知和汇总。
+
+`custom_status` 是可视的。它可以显示短标签（如 `indexing`）而不改变语义行为。
+
+官方集成还可以上报原生会话引用。当 Herdr 有存储的原生会话引用时，`pane.get`、`pane.list`、`agent.get` 和 `agent.list` 会暴露只读的 `agent_session` 对象：
+
+```json
+{
+  "agent_session": {
+    "source": "herdr:codex",
+    "agent": "codex",
+    "kind": "id",
+    "value": "..."
+  }
+}
+```
+
+如果没有存储原生会话引用，该字段会被省略。
+
+当 Herdr 可以解析当前控制面板 PTY 的进程的工作目录时，`pane.get`、`pane.list`、`agent.get` 和 `agent.list` 也会暴露 `foreground_cwd`。现有的 `cwd` 字段仍然是用于标签、follow-cwd 行为和恢复会话状态的面板/工作区工作目录。
+
+当用户 hook 想要自定义展示而不从 Herdr 集成接管生命周期状态时，使用 `pane.report_metadata`。
+
+```json
+{
+  "id": "req_2",
+  "method": "pane.report_metadata",
+  "params": {
+    "pane_id": "1-1",
+    "source": "user:claude-title",
+    "agent": "claude",
+    "applies_to_source": "herdr:claude",
+    "title": "重构认证中间件",
+    "display_agent": "Claude: auth",
+    "custom_status": "重构认证",
+    "state_labels": {
+      "working": "正在重构认证",
+      "idle": "就绪",
+      "done": "审查就绪"
+    },
+    "ttl_ms": 3600000
+  }
+}
+```
+
+Metadata 上报仅用于展示。有效的 metadata 可以覆盖面板标题、显示的 Agent 名称、紧凑的自定义状态以及可见的状态标签。`working`、`blocked`、`idle`、等待、通知、会话恢复和汇总仍来自活跃的 Agent 状态上报。`agent` 是权威 Agent 标签的可选守卫；`applies_to_source` 是活跃生命周期权威来源的可选守卫。使用 `display_agent` 更改可见名称。`state_labels` 的键必须是 `idle`、`working`、`blocked`、`done` 或 `unknown`。使用清除字段（如 `clear_custom_status: true` 配合相同的 `source`）来移除一个展示覆盖。
+
+## 事件订阅
+
+当你需要长期流时订阅事件：
+
+```json
+{
+  "id": "sub_1",
+  "method": "events.subscribe",
+  "params": {
+    "subscriptions": [
+      { "type": "pane.agent_status_changed", "pane_id": "1-1", "agent_status": "blocked" }
+    ]
+  }
+}
+```
+
+第一个响应确认订阅。后续行是推送的事件。
+
+工作区事件订阅包括 `workspace.created`、`workspace.updated`、`workspace.renamed`、`workspace.closed` 和 `workspace.focused`。
+
+当你想要一个匹配事件后得到响应时，使用 `events.wait`。
+
+## 读取面板
+
+除非你在编写协议客户端，否则通过 CLI 使用 `pane.read`。
+
+```bash
+herdr pane read 1-1 --source visible --lines 80
+herdr pane read 1-1 --source recent --lines 120
+herdr pane read 1-1 --source recent-unwrapped --lines 120
+```
+
+`recent-unwrapped` 对日志很有用，因为它忽略软换行。
+
+## 等待状态
+
+使用等待来协调 Agent 和脚本。
+
+```bash
+herdr wait agent-status 1-1 --status done
+herdr wait agent-status 1-1 --status blocked
+```
+
+Agent 等待观察的是语义状态，而不是任意的命令完成。
+
+## 响应格式
+
+成功的响应如下所示：
+
+```json
+{
+  "id": "req_1",
+  "result": {
+    "type": "pane_info",
+    "pane": {
+      "pane_id": "1-1",
+      "terminal_id": "term_abc123",
+      "workspace_id": "1",
+      "tab_id": "1-1",
+      "focused": true,
+      "agent_status": "working",
+      "revision": 42
+    }
+  }
+}
+```
+
+错误响应如下所示：
+
+```json
+{
+  "id": "req_1",
+  "error": {
+    "code": "not_found",
+    "message": "pane not found"
+  }
+}
+```
+
+## 协议稳定性
+
+Herdr 有一个客户端/服务端兼容的协议版本。协议更改会考虑发行版兼容性。
+
+在依赖新行为之前，使用 `ping` 或 `herdr status` 检查服务端协议。优雅地处理未知字段。

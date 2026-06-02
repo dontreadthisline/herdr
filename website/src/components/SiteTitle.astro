@@ -8,9 +8,9 @@ const { siteTitle, siteTitleHref } = Astro.locals.starlightRoute;
     <span translate="no">{siteTitle}</span>
   </a>
   <nav class="title-nav" aria-label="Primary">
-    <a href="/docs/">Docs</a>
-    <a href="/releases/">Releases</a>
-    <a href="/blog/">Blog</a>
+    <a href={import.meta.env.BASE_URL + 'docs/'}>Docs</a>
+    <a href={import.meta.env.BASE_URL + 'releases/'}>Releases</a>
+    <a href={import.meta.env.BASE_URL + 'blog/'}>Blog</a>
   </nav>
 </div>
 

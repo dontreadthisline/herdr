@@ -48,12 +48,24 @@ function walk(node, visitor) {
 }
 
 export default defineConfig({
-  site: 'https://herdr.dev',
+  site: 'https://dontreadthisline.github.io/herdr',
+  base: '/herdr/',
   integrations: [
     starlight({
       title: 'herdr',
       description: 'Terminal-native agent runtime and multiplexer.',
       favicon: '/assets/favicon.png?v=14',
+      defaultLocale: 'root',
+      locales: {
+        root: {
+          label: 'English',
+          lang: 'en',
+        },
+        'zh-cn': {
+          label: '简体中文',
+          lang: 'zh-CN',
+        },
+      },
       social: [
         {
           icon: 'github',
@@ -99,37 +111,41 @@ export default defineConfig({
       sidebar: [
         {
           label: 'Start here',
+          translations: { 'zh-CN': '入门' },
           items: [
-            { label: 'Overview', slug: 'docs' },
-            { label: 'Install', slug: 'docs/install' },
-            { label: 'Quick start', slug: 'docs/quick-start' },
-            { label: 'How to work with Herdr', slug: 'docs/how-to-work' },
-            { label: 'Concepts', slug: 'docs/concepts' },
+            { label: 'Overview', translations: { 'zh-CN': '概览' }, slug: 'docs' },
+            { label: 'Install', translations: { 'zh-CN': '安装' }, slug: 'docs/install' },
+            { label: 'Quick start', translations: { 'zh-CN': '快速开始' }, slug: 'docs/quick-start' },
+            { label: 'How to work with Herdr', translations: { 'zh-CN': '工作方式' }, slug: 'docs/how-to-work' },
+            { label: 'Concepts', translations: { 'zh-CN': '核心概念' }, slug: 'docs/concepts' },
           ],
         },
         {
           label: 'Core guides',
+          translations: { 'zh-CN': '核心指南' },
           items: [
-            { label: 'Agents', slug: 'docs/agents' },
-            { label: 'Integrations', slug: 'docs/integrations' },
-            { label: 'Configuration', slug: 'docs/configuration' },
-            { label: 'Persistence and remote access', slug: 'docs/persistence-remote' },
-            { label: 'Session state and restore', slug: 'docs/session-state' },
+            { label: 'Agents', translations: { 'zh-CN': 'Agent' }, slug: 'docs/agents' },
+            { label: 'Integrations', translations: { 'zh-CN': '集成' }, slug: 'docs/integrations' },
+            { label: 'Configuration', translations: { 'zh-CN': '配置' }, slug: 'docs/configuration' },
+            { label: 'Persistence and remote access', translations: { 'zh-CN': '持久化与远程访问' }, slug: 'docs/persistence-remote' },
+            { label: 'Session state and restore', translations: { 'zh-CN': '会话状态与恢复' }, slug: 'docs/session-state' },
           ],
         },
         {
           label: 'Reference',
+          translations: { 'zh-CN': '参考' },
           items: [
-            { label: 'CLI reference', slug: 'docs/cli-reference' },
-            { label: 'Socket API', slug: 'docs/socket-api' },
-            { label: 'Agent skill file', slug: 'docs/agent-skill' },
+            { label: 'CLI reference', translations: { 'zh-CN': 'CLI 参考' }, slug: 'docs/cli-reference' },
+            { label: 'Socket API', translations: { 'zh-CN': 'Socket API' }, slug: 'docs/socket-api' },
+            { label: 'Agent skill file', translations: { 'zh-CN': 'Agent 技能文件' }, slug: 'docs/agent-skill' },
           ],
         },
         {
           label: 'Updates',
+          translations: { 'zh-CN': '更新' },
           items: [
-            { label: 'Releases', link: '/releases/' },
-            { label: 'Blog', link: '/blog/' },
+            { label: 'Releases', translations: { 'zh-CN': '发布日志' }, link: '/releases/' },
+            { label: 'Blog', translations: { 'zh-CN': '博客' }, link: '/blog/' },
           ],
         },
       ],

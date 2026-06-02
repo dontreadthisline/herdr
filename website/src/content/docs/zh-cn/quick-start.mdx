@@ -1,0 +1,90 @@
+---
+title: 快速开始
+description: 创建你的第一个 Herdr 工作区，在持久化终端面板中运行 Agent。
+---
+
+从任意项目目录启动 Herdr：
+
+```bash
+herdr
+```
+
+Herdr 会启动或附加到你默认的后台会话。你不需要管理 socket。如果 detach，Agent 会继续运行。
+
+关于本地、SSH 和 `herdr --remote` 工作流，请参阅[工作方式](/zh-cn/docs/how-to-work/)。
+
+## 创建工作区
+
+按下 `prefix+shift+n` 创建工作区。工作区是项目级别的容器，包含标签页、面板和 Agent。
+
+为每个活跃项目分配自己的工作区。这样可以使 Agent 状态在侧边栏中清晰可读。
+
+## 运行 Agent
+
+在根面板中启动你的 Agent。
+
+```bash
+pi
+```
+
+Herdr 会自动检测支持的 Agent。侧边栏会显示每个 Agent 的状态：`working`、`blocked`、`done` 或 `idle`。
+
+## 键盘控制
+
+按下 `ctrl+b` 进入前缀模式，然后按下一个操作键。
+
+常用操作：
+
+| 操作 | 按键 |
+| --- | --- |
+| 向右分割 | `prefix+v` |
+| 向下分割 | `prefix+minus` |
+| 新建标签页 | `prefix+c` |
+| 下一个 / 上一个标签页 | `prefix+n` / `prefix+p` |
+| 工作区导航 | `prefix+w` |
+| 新建工作区 | `prefix+shift+n` |
+| 分离客户端 | `prefix+q` |
+
+分离后，再次运行 `herdr` 即可重新附加到同一会话。
+
+## 使用鼠标
+
+Herdr 原生支持鼠标。你可以点击面板、标签页、工作区和 Agent；拖动边界；拖动选择文本以复制到剪贴板；双击单词直接复制；以及使用右键菜单。复制操作不需要按 Ctrl+C。
+
+当终端将修改后的点击事件发送给 Herdr 时，Ctrl-点击可以打开面板中的链接。这适用于 OSC 8 超链接和可见的 `http://` 或 `https://` URL。可移植的终端原生备用方案是 Linux 上的 Shift-Ctrl-点击或 macOS 上的 Shift-Cmd-点击。
+
+## 从键盘复制
+
+按下 `prefix+[` 进入当前面板的复制模式。使用 `h/j/k/l`、`w/b/e` 和 `{`/`}` 移动光标，`v` 或空格开始选择，`y` 或回车复制，`q` 或 Esc 退出而不复制。
+
+## 管理命名会话
+
+命名会话是独立的 Herdr 服务端命名空间。当你需要完全独立的运行时状态时使用它们。
+
+```bash
+herdr session list
+herdr session attach work
+herdr session attach side-project
+herdr session stop work
+herdr session delete side-project
+```
+
+工作区通常已经足够。当你需要在面板集合、socket 和持久化状态之间进行隔离时，再使用命名会话。
+
+## 从另一台机器接入
+
+让 Herdr 运行在工作所在的地方。如果代码和凭据在服务器上，可以 SSH 过去然后像终端多路复用器一样运行 Herdr：
+
+```bash
+ssh you@server
+herdr
+```
+
+或者从本地终端通过 SSH 接入：
+
+```bash
+herdr --remote workbox
+herdr --remote ssh://you@server:2222
+```
+
+对于重复连接的目标，将主机放入你的 SSH 配置中。完整模型请参阅[工作方式](/zh-cn/docs/how-to-work/)。

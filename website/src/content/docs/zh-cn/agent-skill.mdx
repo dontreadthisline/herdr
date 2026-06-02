@@ -1,0 +1,55 @@
+---
+title: Agent 技能文件
+description: 为 Claude Code 或其他编码 Agent 安装 Herdr 指令。
+---
+
+Herdr 在 [`SKILL.md`](https://github.com/ogulcancelik/herdr/blob/master/SKILL.md) 中提供了一个可复用的 Agent 技能文件。
+
+将该文件安装到任何支持可复用技能或自定义指令的编码 Agent 中。该技能教 Agent 如何从 Herdr 面板内部控制 Herdr。
+
+## 技能做什么
+
+该技能告诉 Agent 当 `HERDR_ENV=1` 被设置时使用 `herdr` CLI。这意味着 Agent 正在 Herdr 管理的面板内运行，可以安全地与本地 Herdr Socket 通信。
+
+安装该技能后，Agent 可以：
+
+- 检查工作区、标签页、面板和邻近的 Agent
+- 分割面板并运行命令而不抢夺焦点
+- 读取面板输出和最近的日志
+- 等待服务端、测试或另一个 Agent 完成
+- 在兄弟面板中启动辅助 Agent
+
+该技能不是一个独立的应用或服务。它是一个给 Agent 的 Markdown 指令文件。
+
+## 安装
+
+使用仓库副本作为权威来源：
+
+```text
+https://github.com/ogulcancelik/herdr/blob/master/SKILL.md
+```
+
+对于有技能系统的 Agent，将该文件作为名为 `herdr` 的技能安装。对于没有技能系统的 Agent，将该文件粘贴到 Agent 的项目或用户指令中。
+
+安装后，在 Herdr 内部启动 Agent：
+
+```bash
+herdr
+claude
+```
+
+或在 Herdr 面板中使用任何其他编码 Agent。重要的是 Agent 进程在 Herdr 内部运行，以便 `HERDR_ENV=1` 可用。
+
+## 安全规则
+
+该技能以一个防护规则开头：如果 `HERDR_ENV=1` 未设置，Agent 应停止并说明它不在 Herdr 管理的面板中运行。
+
+这可以防止 Herdr 外部的 Agent 试图控制它不拥有的会话。
+
+## Agent 面向的参考
+
+完整的命令指南在技能文件本身中。它涵盖了面板 ID、`pane split`、`pane run`、`pane read`、`wait output`、`wait agent-status`、工作区和标签页命令以及协调配方。
+
+在此阅读源文件：
+
+[在 GitHub 上打开 `SKILL.md` ->](https://github.com/ogulcancelik/herdr/blob/master/SKILL.md)

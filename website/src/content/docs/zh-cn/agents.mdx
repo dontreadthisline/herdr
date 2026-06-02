@@ -1,0 +1,138 @@
+---
+title: Agent
+description: 了解 Herdr 能够检测什么、Agent 状态如何运作，以及集成如何改进它。
+---
+
+Herdr 专为同时运行多个编码 Agent 而设计。每个 Agent 留在真实的终端面板中，其 shell、日志、提示和运行进程保持完整。Herdr 跟踪哪些面板包含 Agent，将它们的状态汇总到标签页和工作区，并让你直接跳到需要注意的面板，而无需手动轮询每个终端。
+
+## 支持的 Agent
+
+对常见编码 Agent 开箱即用地支持自动检测。
+
+| Agent | 空闲 / 完成 | 工作中 | 阻塞 |
+| --- | --- | --- | --- |
+| Pi | 支持 | 支持 | 部分支持 |
+| Claude Code | 支持 | 支持 | 支持 |
+| Codex | 支持 | 支持 | 支持 |
+| Droid | 支持 | 支持 | 支持 |
+| Amp | 支持 | 支持 | 支持 |
+| OpenCode | 支持 | 支持 | 支持 |
+| Grok CLI | 支持 | 支持 | 支持 |
+| Hermes Agent | 支持 | 支持 | 支持 |
+| Cursor Agent | 支持 | 支持 | 支持 |
+| Antigravity CLI | 支持 | 支持 | 支持 |
+| Kimi Code CLI | 支持 | 支持 | 支持 |
+| Kiro CLI | 支持 | 支持 | 不支持 |
+| GitHub Copilot CLI | 支持 | 支持 | 支持 |
+| Qoder CLI | 支持 | 支持 | 支持 |
+
+已检测但测试较少的：Gemini CLI 和 Cline。
+
+不受支持的 Agent 仍然作为普通终端进程正常运行。只是可能无法获得丰富的状态信息，除非你添加集成或通过 Socket API 上报状态。
+
+## 检测原理
+
+Herdr 组合三个信号来源：
+
+1. 前台进程检测
+2. 终端输出启发式
+3. 集成状态上报
+
+进程检测告诉 Herdr 哪个面板拥有哪个 Agent。启发式在没有 hook 可用时推断状态。集成提供最精确的语义状态。
+
+## 状态汇总
+
+侧边栏将状态向上汇总。
+
+一个阻塞的 Agent 会让其所在的面板、标签页和工作区显示为阻塞。一个工作中的 Agent 会让工作区看起来活跃。一个已完成的 Agent 会保持可见，直到你查看它。
+
+这是 Herdr 的主要工作流：启动多个 Agent，让它们并行工作，使用侧边栏查看哪个项目需要决策，哪个仍在运行，哪个已经准备好接受审查。
+
+## 直接集成
+
+为暴露 hook 或插件的 Agent 安装集成：
+
+```bash
+herdr integration install pi
+herdr integration install omp
+herdr integration install claude
+herdr integration install codex
+herdr integration install opencode
+herdr integration install hermes
+herdr integration install qodercli
+```
+
+检查已安装集成的版本：
+
+```bash
+herdr integration status
+```
+
+仅显示过时的集成：
+
+```bash
+herdr integration status --outdated-only
+```
+
+## 自定义 Agent 标签
+
+你可以重命名 Agent 目标以便显示：
+
+```bash
+herdr agent rename 1-1 reviewer
+herdr agent rename reviewer --clear
+```
+
+目标接受终端 ID、唯一 Agent 名称、已检测或上报的 Agent 标签以及旧版面板 ID。
+
+## 自定义状态标签
+
+集成可以上报可视状态标签而不改变语义状态。
+
+```bash
+herdr pane report-agent 1-1 \
+  --source custom:indexer \
+  --agent docs-bot \
+  --state working \
+  --custom-status indexing
+```
+
+`state` 控制等待、通知和汇总。`custom-status` 仅是显示文本。
+
+## 从 CLI 启动 Agent
+
+当你希望一个终端被视为 Agent 目标时，使用 `herdr agent ...` 命令。Agent 目标出现在 `agent list` 中，可以通过 Agent 名称读取或发送输入，可以根据 Agent 状态等待，也可以直接接入。
+
+从脚本中将 Agent 生成到 Herdr 中：
+
+```bash
+herdr agent start reviewer --cwd ~/project --split right -- pi
+```
+
+你可以将 Agent 放置在指定的工作区或标签页中：
+
+```bash
+herdr agent start docs --workspace 1 --tab 1-1 -- claude
+```
+
+对普通终端、服务端、测试、shell 和底层终端输入使用 `herdr pane ...` 命令。例如，使用 `pane split` 和 `pane run` 处理 `cargo test`，而不是 `agent start`，除非该终端确实被意图性地视为 Agent 目标。
+
+## 直接接入 Agent
+
+将当前终端接入到一个 Agent 终端，而不是完整的 Herdr UI：
+
+```bash
+herdr agent attach reviewer
+```
+
+使用 `ctrl+b q` 分离。发送字面量 `ctrl+b` 使用 `ctrl+b ctrl+b`。
+
+使用鼠标滚轮或普通的 Page Up/Page Down 滚动。正常的输入会跳回到底部。
+
+如果另一个直接接入的客户端已经拥有输入权，使用 `--takeover`：
+
+```bash
+herdr agent attach reviewer --takeover
+```
+
+对于非 Agent 终端的相同直接接入行为，使用 `herdr terminal attach <terminal_id>`。

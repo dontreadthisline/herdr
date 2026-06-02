@@ -4,8 +4,14 @@ import { docsLoader } from '@astrojs/starlight/loaders';
 import { docsSchema } from '@astrojs/starlight/schema';
 
 function docsPath({ entry }: { entry: string }) {
-  const slug = entry.replace(/\.(md|mdx|markdown|mdown|mkdn|mkd|mdwn)$/i, '');
-  return slug === 'index' ? 'docs' : `docs/${slug}`;
+  // Detect locale prefix so non-root locale slugs become "zh-cn/docs/..." instead of "docs/zh-cn/..."
+  // This allows Starlight's slugToLocale() to correctly identify the content locale.
+  const localeMatch = entry.match(/^(zh-cn)\//);
+  const locale = localeMatch ? localeMatch[1] : '';
+  const entryPath = locale ? entry.slice(locale.length + 1) : entry;
+  const rawSlug = entryPath.replace(/\.(md|mdx|markdown|mdown|mkdn|mkd|mdwn)$/i, '');
+  const baseSlug = rawSlug === 'index' ? 'docs' : `docs/${rawSlug}`;
+  return locale ? `${locale}/${baseSlug}` : baseSlug;
 }
 
 export const collections = {
